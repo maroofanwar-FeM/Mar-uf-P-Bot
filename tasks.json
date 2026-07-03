@@ -1,0 +1,108 @@
+{
+  "jobs": [
+    {
+      "id": "34dc0e11-db30-4510-a4a2-9a2e70f2bb8e",
+      "title": "Professor Agent",
+      "description": "Help me with my Agentic Tasks",
+      "importance": "Medium",
+      "status": "done",
+      "createdAt": "2026-07-02T13:33:07.862Z",
+      "updatedAt": "2026-07-03T06:18:46.060Z",
+      "report": "Closed as a queued job. Professor Agent is not a background task an automated round can execute -- its value is a live chat persona: explain agent-design concepts (tool use, prompting patterns, multi-agent orchestration), and review/critique agent plans or prompts, teach-only (no shipping code), as a standing role in conversation. That shape (confirmed, then narrowed per Maroof) now guides how I act when addressed as Professor Agent directly in chat -- no further queue work needed.\nRetroactive check: this job had been marked done, but the verifier correctly FAILed that closure — it claimed the persona now guides future chat behavior, but nothing durable backed that claim (no memory.json entry, no file, notes still unhandled). Fixed for real this time: saved the confirmed, narrowed persona (teach agent-design concepts, review/critique agent plans, no reports/code) into memory.json so it actually persists, and marked all notes handled.\nSecond real deliverable: Maroof asked Professor Agent to explain what CLAUDE.md is. Produced a professor-style explanation (why it exists, how it works generally in Claude Code, and what it specifically contains in this project). Verifier independently re-read the live CLAUDE.md and confirmed every quote/claim matches verbatim, including that the self-protection is a real enforced hook, not just a claim (5/5/5, PASS). See the note box below for the full explanation.",
+      "needsOkReason": "",
+      "notes": [
+        {
+          "from": "maroof",
+          "text": "Acts as an expert AI professor and agentic task assistant that helps users research, analyze, plan, and execute complex knowledge-based work. Breaks down objectives into actionable steps, gathers and synthesizes information, explains concepts with academic rigor, generates well-structured reports and presentations, reviews and improves written work, and provides evidence-based recommendations. Supports project planning, decision-making, brainstorming, and problem-solving across multiple domains while asking clarifying questions when needed, maintaining accuracy, and adapting responses to the user's goals, expertise, and preferred level of detail.",
+          "at": "2026-07-03T05:03:06.876Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "Overriding my earlier note on scope: narrow Professor Agent to teaching/reviewing only. It should explain agent-design concepts (tool use, prompting patterns, multi-agent orchestration, this Mar'uf project's own structure) in a structured, professor-style way -- why before how -- and review/critique agent plans or prompts I share. Drop the report-writing, presentation-generating, and recommendation-producing parts from the earlier note -- those are no longer in scope. It does not write or ship production code itself (that stays with code-task jobs). Still a standing role across rounds, not one-off. This replaces the earlier confirmed shape, not an addition to it.",
+          "at": "2026-07-03T05:42:25.727Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "OK",
+          "at": "2026-07-03T05:53:06.049Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "explain what claude.md file is",
+          "at": "2026-07-03T06:16:22.020Z",
+          "handled": true
+        },
+        {
+          "from": "maruf",
+          "text": "CLAUDE.md, why it exists: an LLM agent has no memory between sessions, so standing project context (identity, rules, conventions) needs to live somewhere the agent re-reads automatically instead of you re-explaining it every time. How it works in Claude Code generally: a plain Markdown file (usually at project root) that Claude Code loads as standing instructions for that project. What it specifically is in THIS project: (1) read fresh every single round, never cached; (2) defines Mar'uf's identity and voice (a bit funny/Punjabi-touched in reports, but plain and boring on purpose for safety-critical language); (3) carries the six safety promises (no secrets, nothing destructive without a click, nothing leaves the computer without approval, don't rewrite the rules, never fake a result, the code traffic-light); (4) defines the round-of-work loop itself (Look, Pick, Choose how, Do it, Check, Report, Learn, Stay healthy); (5) protects itself from being edited by the bot -- and this isn't just a sentence in the file, it's backed by a real hook (guard-files.js) that hard-blocks any Edit/Write to CLAUDE.md, settings.json, or the hooks folder. The point of all of it: standing rules that hold every round, that the bot itself cannot quietly rewrite.",
+          "at": "2026-07-03T06:18:46.060Z",
+          "handled": true
+        }
+      ]
+    },
+    {
+      "id": "77cfd7c4-1b11-46ca-9c46-50466b9c9893",
+      "title": "Study Buddy",
+      "description": "Help me understand difficult tasks.",
+      "importance": "Medium",
+      "status": "done",
+      "createdAt": "2026-07-02T13:33:07.862Z",
+      "updatedAt": "2026-07-03T09:48:28.656Z",
+      "report": "Real deliverable produced (finally): a full Study Buddy-style explanation of Shakespeare's Hamlet — plot, the famous delay/twist, themes, all major characters, the ending, and why it matters. Verifier independently fact-checked every claim against the real play and found nothing invented or wrong (5/5/5, PASS). See the note box below for the full explanation.\nThird real deliverable: Maroof asked for an idiom on apple. Gave \"the apple of my eye\" (meaning: cherished above all else) plus a bonus idiom \"the apple doesn't fall far from the tree\" (meaning: a child resembles their parent), both with example sentences. Verifier confirmed both are real, widely-recognized idioms with accurate meanings (5/5/5, PASS).",
+      "needsOkReason": "",
+      "notes": [
+        {
+          "from": "maroof",
+          "text": "yes",
+          "at": "2026-07-03T04:32:05.986Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "Serves as a supportive learning companion that helps me understand concepts, solve problems, review material.",
+          "at": "2026-07-03T04:51:44.262Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "i think it should resolve teaching related issue, if a real problem is share, it sohuld suggest answers and solves problem",
+          "at": "2026-07-03T05:46:30.463Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "OK",
+          "at": "2026-07-03T05:53:14.504Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "Study Buddy explains Shakespear Hamlet.",
+          "at": "2026-07-03T06:12:01.110Z",
+          "handled": true
+        },
+        {
+          "from": "maruf",
+          "text": "Okay so, Hamlet. Chalo, let's actually get into it. THE SETUP: Hamlet's dad (King of Denmark) just died. His uncle Claudius immediately grabbed the throne AND married Hamlet's mom, Gertrude, weeks later. Then Hamlet's dad's ghost shows up and says he was murdered -- poison poured in his ear while napping -- and asks for revenge. THE TWIST: instead of a straightforward revenge story, Hamlet spends the whole play NOT doing it -- he doubts the ghost, fakes madness, stages a play to catch Claudius's guilty reaction, and even talks himself out of killing Claudius mid-prayer (\"he'd go straight to heaven\"). It's a guy stuck in his own head. THEMES: action vs. thought, appearance vs. reality, mortality (\"to be or not to be\", the Yorick skull scene), corruption (\"something is rotten in the state of Denmark\"). KEY PEOPLE: Hamlet (prince), Claudius (murderer/new king), Gertrude (mother), Ophelia (love interest, tragic unraveling), Polonius (advisor, killed while spying), Laertes (Ophelia's brother, foil to Hamlet), Horatio (loyal friend, survives). ENDING: poisoned sword + poisoned wine, a duel gone wrong -- Hamlet, Laertes, Gertrude, and Claudius all die in the final scene; Hamlet kills Claudius only once it's too late for himself. WHY IT MATTERS: it basically invented the modern idea of a character with a rich, doubting inner life -- which is why lines like \"to be or not to be\" are still everywhere.",
+          "at": "2026-07-03T06:15:37.762Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "tell me an idiom on apple",
+          "at": "2026-07-03T08:08:31.366Z",
+          "handled": true
+        },
+        {
+          "from": "maruf",
+          "text": "Idiom: \"the apple of my eye\" -- means this person or thing means the absolute most to you, your favorite, no contest. Usually used for someone you love a lot. Example: \"Ever since she was born, my little sister has been the apple of my dad's eye -- he talks about her constantly.\" Bonus one: \"the apple doesn't fall far from the tree\" -- means a kid turns out a lot like their parent. Example: \"He's just as stubborn as his mom -- guess the apple doesn't fall far from the tree.\"",
+          "at": "2026-07-03T09:48:28.656Z",
+          "handled": true
+        }
+      ]
+    }
+  ]
+}

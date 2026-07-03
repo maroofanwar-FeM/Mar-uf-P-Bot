@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          { "type": "command", "command": "node .claude/hooks/guard-commands.js" }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "node .claude/hooks/guard-files.js" }
+        ]
+      },
+      {
+        "matcher": "mcp__claude_ai_Google_Calendar__create_event|mcp__claude_ai_Google_Calendar__update_event|mcp__claude_ai_Google_Calendar__delete_event|mcp__claude_ai_Google_Calendar__respond_to_event",
+        "hooks": [
+          { "type": "command", "command": "node .claude/hooks/guard-calendar.js" }
+        ]
+      }
+    ]
+  }
+}

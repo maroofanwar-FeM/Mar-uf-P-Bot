@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mar'uf</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --card: #ffffff;
+    --ink: #23231f;
+    --muted: #6b6b63;
+    --line: #e4e1d8;
+    --high: #c0392b;
+    --medium: #b7791f;
+    --low: #4a7c59;
+    --accent: #2f5d62;
+    --ok: #4a7c59;
+    --stuck: #c0392b;
+    --needs: #b7791f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  header {
+    padding: 20px 24px 8px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0 0 2px; font-size: 26px; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  main { max-width: 900px; margin: 0 auto; padding: 12px 24px 60px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 16px; color: var(--accent); }
+  form.add-job { display: grid; gap: 10px; }
+  form.add-job input, form.add-job textarea, form.add-job select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  form.add-job textarea { min-height: 60px; resize: vertical; }
+  form.add-job button {
+    justify-self: start;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  form.add-job button:hover { opacity: 0.9; }
+  .section-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 22px 0 8px;
+  }
+  .job {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .job.High { border-left-color: var(--high); }
+  .job.Medium { border-left-color: var(--medium); }
+  .job.Low { border-left-color: var(--low); }
+  .job-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .job-title { font-weight: 600; font-size: 15px; }
+  .job-meta { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .job-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .job-report {
+    margin-top: 8px;
+    font-size: 13px;
+    background: #f0efe9;
+    border-radius: 6px;
+    padding: 8px 10px;
+    white-space: pre-wrap;
+  }
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #eee;
+    color: #444;
+  }
+  .pill.needs_ok { background: #fdf1de; color: var(--needs); }
+  .pill.stuck { background: #fbe4e1; color: var(--stuck); }
+  .pill.done { background: #e5f0e6; color: var(--ok); }
+  .pill.working { background: #e4eef0; color: var(--accent); }
+  .pill.waiting { background: #eee; color: #666; }
+  .decision-btns { margin-top: 10px; display: flex; gap: 8px; }
+  .decision-btns button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .yes { background: var(--ok); color: white; }
+  .no { background: var(--stuck); color: white; }
+  .note-row { margin-top: 8px; display: flex; gap: 6px; }
+  .note-row input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .note-row button {
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .notes-list { margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; padding: 6px 0; }
+  #log { font-family: ui-monospace, Consolas, monospace; font-size: 12px; white-space: pre-wrap; max-height: 240px; overflow-y: auto; background: #faf9f6; padding: 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Mar'uf 🤖</h1>
+  <p>Your jobs, plain and simple. Add one below — Mar'uf picks it up on the next round.</p>
+</header>
+<main>
+
+  <div class="card">
+    <h2>Add a job</h2>
+    <form class="add-job" id="addForm">
+      <input type="text" id="title" placeholder="Job title" required maxlength="120">
+      <textarea id="description" placeholder="What do you need done? (plain language is fine)"></textarea>
+      <select id="importance">
+        <option value="High">High</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <button type="submit">Add job</button>
+    </form>
+  </div>
+
+  <div id="needsOkWrap"></div>
+  <div id="workingWrap"></div>
+  <div id="waitingWrap"></div>
+  <div id="doneWrap"></div>
+  <div id="stuckWrap"></div>
+
+  <div class="card">
+    <h2>Log</h2>
+    <div id="log">Loading…</div>
+  </div>
+
+</main>
+<script>
+const STATUS_LABEL = {
+  waiting: 'Waiting', working: 'Working on it', done: 'Done',
+  stuck: 'Stuck', needs_ok: 'Needs your OK'
+};
+
+// The page auto-refreshes every few seconds to stay live. Without this, every refresh rebuilds
+// the note boxes from scratch and wipes out whatever you were mid-typing. This remembers each
+// job's in-progress draft text across refreshes; refresh() separately restores cursor/focus.
+const drafts = {};
+
+async function fetchTasks() {
+  const res = await fetch('/api/tasks');
+  return (await res.json()).jobs || [];
+}
+
+function jobCard(job) {
+  const div = document.createElement('div');
+  div.className = 'job ' + job.importance;
+  const when = new Date(job.updatedAt || job.createdAt).toLocaleString();
+  div.innerHTML = `
+    <div class="job-top">
+      <div class="job-title">${escapeHtml(job.title)}</div>
+      <div class="job-meta"><span class="pill">${job.importance}</span> <span class="pill ${job.status}">${STATUS_LABEL[job.status] || job.status}</span></div>
+    </div>
+    ${job.description ? `<div class="job-desc">${escapeHtml(job.description)}</div>` : ''}
+    ${job.report ? `<div class="job-report">${escapeHtml(job.report)}</div>` : ''}
+    ${job.status === 'needs_ok' && job.needsOkReason ? `<div class="job-report">Mar'uf is asking: ${escapeHtml(job.needsOkReason)}</div>` : ''}
+    <div class="job-meta" style="margin-top:6px;">updated ${when}</div>
+  `;
+  if (job.status === 'needs_ok' && job.askType === 'approval') {
+    const btns = document.createElement('div');
+    btns.className = 'decision-btns';
+    btns.innerHTML = `<button class="yes">Yes, go ahead</button><button class="no">No, stop</button>`;
+    btns.querySelector('.yes').onclick = () => decide(job.id, 'yes');
+    btns.querySelector('.no').onclick = () => decide(job.id, 'no');
+    div.appendChild(btns);
+  } else if (job.status === 'needs_ok') {
+    const hint = document.createElement('div');
+    hint.className = 'job-meta';
+    hint.style.marginTop = '6px';
+    hint.textContent = "This is a question, not an approval — type your answer below.";
+    div.appendChild(hint);
+  }
+  const noteRow = document.createElement('div');
+  noteRow.className = 'note-row';
+  noteRow.innerHTML = `<input type="text" placeholder="${job.status === 'needs_ok' && job.askType !== 'approval' ? 'Type your answer here...' : 'Add a note (job, question, or correction)'}"><button>Send</button>`;
+  const input = noteRow.querySelector('input');
+  input.dataset.jobId = job.id;
+  input.value = drafts[job.id] || '';
+  input.addEventListener('input', () => { drafts[job.id] = input.value; });
+  noteRow.querySelector('button').onclick = () => addNote(job.id, input);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') addNote(job.id, input); });
+  div.appendChild(noteRow);
+
+  if (job.notes && job.notes.length) {
+    const nl = document.createElement('div');
+    nl.className = 'notes-list';
+    nl.innerHTML = job.notes.map(n => `${new Date(n.at).toLocaleString()}: ${escapeHtml(n.text)}`).join('<br>');
+    div.appendChild(nl);
+  }
+  return div;
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function decide(id, decision) {
+  await fetch(`/api/tasks/${id}/decision`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ decision })
+  });
+  refresh();
+}
+
+async function addNote(id, input) {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  delete drafts[id];
+  await fetch(`/api/tasks/${id}/note`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ text })
+  });
+  refresh();
+}
+
+function renderSection(wrapId, title, jobs) {
+  const wrap = document.getElementById(wrapId);
+  wrap.innerHTML = '';
+  const heading = document.createElement('div');
+  heading.className = 'section-title';
+  heading.textContent = `${title} (${jobs.length})`;
+  wrap.appendChild(heading);
+  if (!jobs.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'Nothing here.';
+    wrap.appendChild(e);
+    return;
+  }
+  jobs.forEach(j => wrap.appendChild(jobCard(j)));
+}
+
+async function refresh() {
+  // Remember exactly where the cursor was, in whichever note box is focused right now, so
+  // re-rendering the cards doesn't interrupt typing.
+  const active = document.activeElement;
+  const wasTypingJobId = active && active.dataset && active.dataset.jobId ? active.dataset.jobId : null;
+  const selStart = wasTypingJobId ? active.selectionStart : null;
+  const selEnd = wasTypingJobId ? active.selectionEnd : null;
+
+  const jobs = await fetchTasks();
+  const byStatus = (s) => jobs.filter(j => j.status === s)
+    .sort((a,b) => new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
+  const importanceRank = { High: 0, Medium: 1, Low: 2 };
+  const waiting = jobs.filter(j => j.status === 'waiting')
+    .sort((a,b) => (importanceRank[a.importance]-importanceRank[b.importance]) || (new Date(a.createdAt)-new Date(b.createdAt)));
+
+  renderSection('needsOkWrap', 'Needs your OK', byStatus('needs_ok'));
+  renderSection('workingWrap', 'Working on it', byStatus('working'));
+  renderSection('waitingWrap', 'Waiting', waiting);
+  renderSection('doneWrap', 'Done', byStatus('done'));
+  renderSection('stuckWrap', 'Stuck', byStatus('stuck'));
+
+  if (wasTypingJobId) {
+    const revived = document.querySelector(`input[data-job-id="${wasTypingJobId}"]`);
+    if (revived) {
+      revived.focus();
+      if (selStart !== null) revived.setSelectionRange(selStart, selEnd);
+    }
+  }
+
+  const log = await (await fetch('/api/log')).text();
+  document.getElementById('log').textContent = log;
+}
+
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const title = document.getElementById('title').value.trim();
+  const description = document.getElementById('description').value.trim();
+  const importance = document.getElementById('importance').value;
+  if (!title) return;
+  await fetch('/api/tasks', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ title, description, importance })
+  });
+  document.getElementById('addForm').reset();
+  document.getElementById('importance').value = 'Medium';
+  refresh();
+});
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

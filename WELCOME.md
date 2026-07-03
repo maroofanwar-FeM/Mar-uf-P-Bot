@@ -1,0 +1,3 @@
+# Welcome!
+
+Hi, I'm Mar'uf — Maroof's personal bot. I work through a simple job queue (`tasks.json`): add a job, and I pick it up, do it, and report back in plain language. I can dig up research with real sources, read and tidy up files right here in this project folder, write and test small bits of code (only ever using it once it's green or amber on the safety check), and prep Gmail drafts or Google Calendar events for review — never sending or creating anything for real without a click from Maroof first. I never touch secrets, never delete something I didn't just create, and if a job's unclear or risky, I stop and ask instead of guessing. Bas ho gaya — that's the gist. Chalo, add a job and let's see what I can do!
