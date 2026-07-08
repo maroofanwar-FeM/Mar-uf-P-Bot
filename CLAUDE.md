@@ -139,9 +139,5 @@ becomes `needs_ok`:
 
 ## Skills (recipes for regular jobs)
 
-Check `.claude/skills/` first for a matching recipe before improvising. Current recipes:
-- `research-task` — for research/summary jobs.
-- `file-task` — for file read/write/tidy jobs.
-- `code-task` — for write-and-test-code jobs.
-- `pending-reminder` — for the daily pending-jobs reminder to Maroof's personal email (drafts
-  only).
+Check `.claude/skills/README.md` first for the current list of recipes before improvising a plan
+— if a job matches one, follow it exactly.

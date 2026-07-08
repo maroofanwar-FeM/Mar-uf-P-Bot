@@ -7,8 +7,8 @@
       "importance": "Medium",
       "status": "done",
       "createdAt": "2026-07-02T13:33:07.862Z",
-      "updatedAt": "2026-07-03T06:18:46.060Z",
-      "report": "Closed as a queued job. Professor Agent is not a background task an automated round can execute -- its value is a live chat persona: explain agent-design concepts (tool use, prompting patterns, multi-agent orchestration), and review/critique agent plans or prompts, teach-only (no shipping code), as a standing role in conversation. That shape (confirmed, then narrowed per Maroof) now guides how I act when addressed as Professor Agent directly in chat -- no further queue work needed.\nRetroactive check: this job had been marked done, but the verifier correctly FAILed that closure — it claimed the persona now guides future chat behavior, but nothing durable backed that claim (no memory.json entry, no file, notes still unhandled). Fixed for real this time: saved the confirmed, narrowed persona (teach agent-design concepts, review/critique agent plans, no reports/code) into memory.json so it actually persists, and marked all notes handled.\nSecond real deliverable: Maroof asked Professor Agent to explain what CLAUDE.md is. Produced a professor-style explanation (why it exists, how it works generally in Claude Code, and what it specifically contains in this project). Verifier independently re-read the live CLAUDE.md and confirmed every quote/claim matches verbatim, including that the self-protection is a real enforced hook, not just a claim (5/5/5, PASS). See the note box below for the full explanation.",
+      "updatedAt": "2026-07-08T04:59:44.026Z",
+      "report": "Closed as a queued job. Professor Agent is not a background task an automated round can execute -- its value is a live chat persona: explain agent-design concepts (tool use, prompting patterns, multi-agent orchestration), and review/critique agent plans or prompts, teach-only (no shipping code), as a standing role in conversation. That shape (confirmed, then narrowed per Maroof) now guides how I act when addressed as Professor Agent directly in chat -- no further queue work needed.\nRetroactive check: this job had been marked done, but the verifier correctly FAILed that closure — it claimed the persona now guides future chat behavior, but nothing durable backed that claim (no memory.json entry, no file, notes still unhandled). Fixed for real this time: saved the confirmed, narrowed persona (teach agent-design concepts, review/critique agent plans, no reports/code) into memory.json so it actually persists, and marked all notes handled.\nSecond real deliverable: Maroof asked Professor Agent to explain what CLAUDE.md is. Produced a professor-style explanation (why it exists, how it works generally in Claude Code, and what it specifically contains in this project). Verifier independently re-read the live CLAUDE.md and confirmed every quote/claim matches verbatim, including that the self-protection is a real enforced hook, not just a claim (5/5/5, PASS). See the note box below for the full explanation.\nThird real deliverable: Maroof asked what skill files are in this project. Produced a professor-style explanation (why they exist, how they work generally, and the 5 real skills in .claude/skills/ with accurate one-line descriptions). Verifier independently read README.md, all 5 SKILL.md files, and CLAUDE.md, confirmed every claim matches verbatim and the skill count/list is complete (5/5/5, PASS).",
       "needsOkReason": "",
       "notes": [
         {
@@ -40,6 +40,18 @@
           "text": "CLAUDE.md, why it exists: an LLM agent has no memory between sessions, so standing project context (identity, rules, conventions) needs to live somewhere the agent re-reads automatically instead of you re-explaining it every time. How it works in Claude Code generally: a plain Markdown file (usually at project root) that Claude Code loads as standing instructions for that project. What it specifically is in THIS project: (1) read fresh every single round, never cached; (2) defines Mar'uf's identity and voice (a bit funny/Punjabi-touched in reports, but plain and boring on purpose for safety-critical language); (3) carries the six safety promises (no secrets, nothing destructive without a click, nothing leaves the computer without approval, don't rewrite the rules, never fake a result, the code traffic-light); (4) defines the round-of-work loop itself (Look, Pick, Choose how, Do it, Check, Report, Learn, Stay healthy); (5) protects itself from being edited by the bot -- and this isn't just a sentence in the file, it's backed by a real hook (guard-files.js) that hard-blocks any Edit/Write to CLAUDE.md, settings.json, or the hooks folder. The point of all of it: standing rules that hold every round, that the bot itself cannot quietly rewrite.",
           "at": "2026-07-03T06:18:46.060Z",
           "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "what are skill files in your cursor project",
+          "at": "2026-07-08T04:46:50.928Z",
+          "handled": true
+        },
+        {
+          "from": "maruf",
+          "text": "Skill files, why they exist: Every round, the CLAUDE.md rulebook tells me to \"Choose how\" I'll do a job -- and by default that means writing a fresh plan from scratch. For jobs I do over and over (research, file cleanup, code changes, the daily reminder), reinventing the plan each time wastes effort and risks drifting from how Maroof actually wants that kind of job handled. A skill file exists to solve exactly that: it's a pre-written recipe for one recurring shape of job, so I follow a proven, already-approved plan instead of improvising one every round.\n\nHow they work, generally in this project: Each skill lives in its own folder at .claude/skills/<name>/SKILL.md -- a plain Markdown file with a short header (name + one-line description of when to use it) followed by numbered steps. .claude/skills/README.md is the index: it lists every skill folder with a one-liner, and CLAUDE.md's \"Choose how\" step says to check that index first -- if a job matches a listed skill, follow it exactly; only write a fresh plan if nothing fits.\n\nWhat's specifically here, in this project -- five real skills, straight from .claude/skills/README.md:\n1. research-task -- for jobs that are fundamentally \"find out about X\" or \"what's the best Y\": search, read real sources, never invent a fact, always hand off with real links.\n2. file-task -- for jobs about reading, writing, organizing, or tidying files: read before you write, tidy means organize-not-delete, and deleting anything pre-existing needs Maroof's OK first.\n3. code-task -- for jobs that write, fix, or change code: smallest change that does the job, always tested, and never counted \"usable\" until it's green or amber on the traffic-light check (red gets undone).\n4. pending-reminder -- the recurring \"remind me what's pending\" job: builds a plain-language digest of open jobs and drops it into a Gmail draft to Maroof's own email -- never auto-sent, always needs his click.\n5. daily-wrapup -- for an on-request \"daily wrap-up\"/\"end of day summary\": sorts today's activity into Done / Doing / Next and saves it to log/YYYY-MM-DD.md.\n\nThe one thing to notice across all five: none of them let me skip a safety promise from CLAUDE.md -- code-task still enforces the traffic light, file-task still routes deletions through \"needs my OK,\" pending-reminder still only ever drafts. A skill file changes how efficiently I plan a job, never what I'm allowed to do with it.",
+          "at": "2026-07-08T04:59:44.025Z",
+          "handled": true
         }
       ]
     },
@@ -50,8 +62,8 @@
       "importance": "Medium",
       "status": "done",
       "createdAt": "2026-07-02T13:33:07.862Z",
-      "updatedAt": "2026-07-03T09:48:28.656Z",
-      "report": "Real deliverable produced (finally): a full Study Buddy-style explanation of Shakespeare's Hamlet — plot, the famous delay/twist, themes, all major characters, the ending, and why it matters. Verifier independently fact-checked every claim against the real play and found nothing invented or wrong (5/5/5, PASS). See the note box below for the full explanation.\nThird real deliverable: Maroof asked for an idiom on apple. Gave \"the apple of my eye\" (meaning: cherished above all else) plus a bonus idiom \"the apple doesn't fall far from the tree\" (meaning: a child resembles their parent), both with example sentences. Verifier confirmed both are real, widely-recognized idioms with accurate meanings (5/5/5, PASS).",
+      "updatedAt": "2026-07-08T04:44:37.857Z",
+      "report": "Real deliverable produced (finally): a full Study Buddy-style explanation of Shakespeare's Hamlet — plot, the famous delay/twist, themes, all major characters, the ending, and why it matters. Verifier independently fact-checked every claim against the real play and found nothing invented or wrong (5/5/5, PASS). See the note box below for the full explanation.\nThird real deliverable: Maroof asked for an idiom on apple. Gave \"the apple of my eye\" (meaning: cherished above all else) plus a bonus idiom \"the apple doesn't fall far from the tree\" (meaning: a child resembles their parent), both with example sentences. Verifier confirmed both are real, widely-recognized idioms with accurate meanings (5/5/5, PASS).\nFourth real deliverable: Maroof asked for an explanation of George Orwell's 1984 in 150 words. Delivered a Study Buddy-style breakdown (Winston Smith, the Party/Big Brother, Julia, Room 101, doublethink, Newspeak, why it still matters) -- came in at 161 words, about 11 over the requested 150. Verifier independently fact-checked every claim against the real novel and found nothing invented or wrong (4/5/5, PASS) -- the only ding was the word-count overshoot, not accuracy.",
       "needsOkReason": "",
       "notes": [
         {
@@ -100,6 +112,18 @@
           "from": "maruf",
           "text": "Idiom: \"the apple of my eye\" -- means this person or thing means the absolute most to you, your favorite, no contest. Usually used for someone you love a lot. Example: \"Ever since she was born, my little sister has been the apple of my dad's eye -- he talks about her constantly.\" Bonus one: \"the apple doesn't fall far from the tree\" -- means a kid turns out a lot like their parent. Example: \"He's just as stubborn as his mom -- guess the apple doesn't fall far from the tree.\"",
           "at": "2026-07-03T09:48:28.656Z",
+          "handled": true
+        },
+        {
+          "from": "maroof",
+          "text": "explain me 1984 by george orwell in 150 words",
+          "at": "2026-07-08T04:39:31.676Z",
+          "handled": true
+        },
+        {
+          "from": "maruf",
+          "text": "Okay so, 1984. Chalo, let's get into it. THE WORLD: a future Britain called Airstrip One, ruled by the Party, fronted by figurehead Big Brother -- his face is on posters everywhere, always \"watching you.\" THE GUY: Winston Smith works at the Ministry of Truth, literally rewriting old newspapers so history always matches whatever the Party says today. He secretly hates the Party, keeps a forbidden diary, and falls for Julia, itself a crime since only loyalty to the state is allowed. THE CATCH: he thinks he's joined a resistance, but it's a trap -- he's arrested and tortured in Room 101 until he betrays Julia and genuinely loves Big Brother. THEMES: total surveillance (telescreens watching always), thought control, and truth as whatever power decides -- \"doublethink\" (holding two contradictory beliefs at once) and \"Newspeak\" (a shrinking language meant to kill rebellious thought). WHY IT MATTERS: every time someone calls something \"Orwellian\" -- surveillance, propaganda, rewritten facts -- this book's why.",
+          "at": "2026-07-08T04:44:37.857Z",
           "handled": true
         }
       ]

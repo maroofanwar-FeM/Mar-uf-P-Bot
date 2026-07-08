@@ -59,3 +59,21 @@ Plain-language log of every round of work. Newest entries at the bottom.
 - 2026-07-03 08:08 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
 - 2026-07-03 09:48 UTC — **Study Buddy**: Maroof asked for an idiom on apple. Gave 'the apple of my eye' plus a bonus 'the apple doesn't fall far from the tree,' both with examples. Verifier confirmed both are real idioms with accurate meanings (5/5/5, PASS). Status: done, third real deliverable.
 - 2026-07-03 09:49 UTC — Nothing to do this round (both jobs done). Found and fixed a small bookkeeping bug from last round: the 'tell me an idiom on apple' note was answered but never actually marked handled (wrong array index used when writing it) — corrected now, no content changed.
+- 2026-07-03 10:01 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-03 10:02 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-03 11:18 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-03 11:19 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-07 11:20 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-07 11:21 UTC — Nothing to do this round: both jobs are done, all notes handled. Server health check: still up (200). Waiting for a new job or note from Maroof.
+- 2026-07-07 11:22 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-07 11:28 UTC — Nothing to do this round (both jobs done). Also applied Maroof's correction: moved the skills list out of CLAUDE.md into its own file (.claude/skills/README.md), with CLAUDE.md just pointing to it. Saved as a standing correction in memory.json for future skill additions.
+- 2026-07-07 11:29 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+- 2026-07-07 11:30 UTC — **Daily wrap-up**: gathered activity from tasks.json and log.md, wrote log/2026-07-07.md. Today: one applied correction (skills list moved to .claude/skills/README.md), queue clear, both jobs done. Status: done.
+- 2026-07-07 (re-run) — **Daily wrap-up** (fresh on Maroof's request): overwrote log/2026-07-07.md with the complete day's picture. Queue clear, both jobs done. Status: done.
+- 2026-07-07 11:48 UTC — Nothing to do this round: both jobs are done, all notes handled. Waiting for a new job or note from Maroof.
+
+- 2026-07-07 (third run) — **Daily wrap-up**: Maroof requested a fresh wrap-up. Overwrote log/2026-07-07.md with the complete day's picture — one correction applied, two earlier wrap-up runs, queue clear. Status: done.
+- 2026-07-08 04:44 UTC — **Study Buddy**: Maroof asked for an explanation of 1984 by George Orwell in 150 words. Delivered a Study Buddy-style breakdown, fact-checked clean against the real novel. Verifier: PASS (4/5/5) -- only ding was landing at 161 words instead of 150. Status: done, fourth real deliverable.
+
+- 2026-07-08 05:00 UTC — **Professor Agent**: Maroof asked what skill files are in this project. Delivered a professor-style explanation grounded in the real .claude/skills/README.md and all 5 SKILL.md files. Verifier independently confirmed every claim and the skill list is complete, nothing invented (5/5/5, PASS). Status: done, third real deliverable.
+- 2026-07-08 (daily wrap-up) — Gathered today's activity from tasks.json and log.md. Two deliverables done (1984 explanation via Study Buddy; skill-files explanation via Professor Agent). Queue clear. Saved to log/2026-07-08.md.

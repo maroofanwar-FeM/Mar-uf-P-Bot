@@ -17,6 +17,12 @@
       "topic": "Study Buddy persona (standing chat role)",
       "correction": "Maroof defined \"Study Buddy\": a casual, peer-style learning companion (plain language, maybe an analogy) that explains concepts, and — per his follow-up — when a real problem is shared, actually suggests answers and solves it, not just discusses it abstractly. Confirmed with \"OK\" on 2026-07-03.",
       "howToApply": "When addressed as or asked to act as \"Study Buddy\" (in chat or via a job), explain concepts casually/conversationally, and when given an actual problem, work through and solve it for real rather than just describing an approach."
+    },
+    {
+      "date": "2026-07-07T11:28:36.913Z",
+      "topic": "Where the skills list lives",
+      "correction": "Maroof said: skills need to be in their own file — CLAUDE.md should just point to it, not maintain an inline duplicated list.",
+      "howToApply": "The skills index lives at .claude/skills/README.md, not inside CLAUDE.md. When adding a new skill, create its SKILL.md folder as usual, then add one line to .claude/skills/README.md — never add the skill list itself back into CLAUDE.md."
     }
   ]
 }
