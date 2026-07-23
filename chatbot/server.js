@@ -27,10 +27,11 @@ const SESSION_COOKIE = 'session';
 const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // A host (Koyeb, Render, etc.) sets PORT and expects us to bind every interface.
-// Locally there's no PORT env var, so we fall back to a fixed port on localhost
-// only, same as before.
+// Locally there's no PORT env var, so we fall back to localhost only, using
+// LOCAL_PORT to pick which port (e.g. running a second, staging copy) without
+// tripping the hosted-mode behavior above.
 const IS_HOSTED = !!process.env.PORT;
-const PORT = process.env.PORT || 4546;
+const PORT = process.env.PORT || process.env.LOCAL_PORT || 4546;
 const HOST = IS_HOSTED ? '0.0.0.0' : '127.0.0.1';
 
 // The real claude.exe/claude, not the claude.cmd wrapper — .cmd/.bat files need a
