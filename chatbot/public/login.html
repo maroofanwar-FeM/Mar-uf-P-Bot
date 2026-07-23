@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — My Bot</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    max-width: 320px;
+    margin: 6rem auto;
+    padding: 0 1.25rem;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
+  label { display: block; margin-top: 1rem; font-size: 0.9rem; }
+  input {
+    width: 100%;
+    font: inherit;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    margin-top: 0.25rem;
+  }
+  button {
+    margin-top: 1.25rem;
+    width: 100%;
+    font: inherit;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+  }
+  button:disabled { cursor: not-allowed; opacity: 0.6; }
+  #error {
+    margin-top: 1rem;
+    color: #c0392b;
+    min-height: 1.2em;
+  }
+</style>
+</head>
+<body>
+  <h1>Sign in</h1>
+
+  <form id="login-form">
+    <label for="username">Username</label>
+    <input type="text" id="username" autocomplete="username" required>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" autocomplete="current-password" required>
+
+    <button type="submit" id="submit">Sign in</button>
+    <div id="error"></div>
+  </form>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const submitButton = document.getElementById('submit');
+    const errorBox = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitButton.disabled = true;
+      errorBox.textContent = '';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errorBox.textContent = data.error || 'Sign in failed.';
+          submitButton.disabled = false;
+          return;
+        }
+        window.location.href = '/';
+      } catch (e) {
+        errorBox.textContent = 'Could not reach the server: ' + e.message;
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

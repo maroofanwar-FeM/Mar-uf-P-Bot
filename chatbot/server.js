@@ -1,0 +1,250 @@
+// A tiny standalone chatbot server. Plain Node.js, no npm installs, no external deps.
+//
+// What it does:
+//   - Shows a login screen first. Only a username/password matching the
+//     APP_USERNAME / APP_PASSWORD environment variables (read from chatbot/.env,
+//     never hard-coded) gets in.
+//   - Once signed in, serves the bot page (public/index.html): an input box, a
+//     Run button, an output area.
+//   - When you click Run, the page sends your text to this server, which runs
+//     the `claude` CLI as a one-off, non-interactive process to get a reply —
+//     no API key needed, since it uses whatever you're already logged into
+//     Claude Code with. It runs in a scratch folder outside this project, with
+//     no special permission flags, so it can only answer in text — it has no
+//     access to this project's files and can't run commands or edit anything
+//     on its own.
+const http = require('http');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const crypto = require('crypto');
+const { execFile } = require('child_process');
+
+const ROOT = __dirname;
+const PUBLIC_DIR = path.join(ROOT, 'public');
+const ENV_FILE = path.join(ROOT, '.env');
+const PORT = 4546;
+const SESSION_COOKIE = 'session';
+const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+// The real claude.exe, not the claude.cmd wrapper — .cmd/.bat files need a shell
+// to run on Windows, and shells don't safely escape arguments containing spaces
+// or quotes. Calling the .exe directly lets Node pass userInput as one exact
+// argument, with no shell parsing involved at all.
+const CLAUDE_BIN = process.platform === 'win32'
+  ? path.join(process.env.APPDATA || '', 'npm', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe')
+  : 'claude';
+
+// Runs the prompt in a fresh scratch folder each time, so the CLI has no view of
+// this project's files.
+const SCRATCH_DIR = path.join(os.tmpdir(), 'maruf-chatbot-scratch');
+fs.mkdirSync(SCRATCH_DIR, { recursive: true });
+
+// --- Load .env (KEY=VALUE per line) without needing any npm package ---
+function loadEnvFile() {
+  let text;
+  try {
+    text = fs.readFileSync(ENV_FILE, 'utf8');
+  } catch (e) {
+    return; // no .env yet — handled later with a clear error
+  }
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq === -1) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (key && !(key in process.env)) process.env[key] = value;
+  }
+}
+loadEnvFile();
+
+// --- Sessions: an in-memory token -> expiry map. Cleared on server restart,
+// which is fine for a small personal tool. ---
+const sessions = new Map();
+
+function createSession() {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.set(token, Date.now() + SESSION_LIFETIME_MS);
+  return token;
+}
+
+function isValidSession(token) {
+  if (!token) return false;
+  const expiresAt = sessions.get(token);
+  if (!expiresAt) return false;
+  if (Date.now() > expiresAt) { sessions.delete(token); return false; }
+  return true;
+}
+
+function parseCookies(req) {
+  const header = req.headers.cookie;
+  const cookies = {};
+  if (!header) return cookies;
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    cookies[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
+  }
+  return cookies;
+}
+
+function isAuthed(req) {
+  const cookies = parseCookies(req);
+  return isValidSession(cookies[SESSION_COOKIE]);
+}
+
+// Constant-time-ish comparison so a wrong guess can't be timed to leak how many
+// characters matched.
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, bufA); // keep timing consistent either way
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function sendJSON(res, status, obj, extraHeaders) {
+  const body = JSON.stringify(obj);
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(body),
+    ...extraHeaders,
+  });
+  res.end(body);
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let chunks = [];
+    let size = 0;
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > 1_000_000) { reject(new Error('Request body too large.')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8');
+      if (!raw) return resolve({});
+      try { resolve(JSON.parse(raw)); } catch (e) { reject(new Error('Body must be valid JSON.')); }
+    });
+    req.on('error', reject);
+  });
+}
+
+// Runs `claude -p "<input>"` non-interactively and returns its text reply.
+// No --permission-mode flag is passed, so the CLI keeps its normal, cautious
+// defaults — it can't edit files or run commands without approval, and there's
+// no one here to click "yes", so it just answers in text.
+function callClaude(userInput) {
+  return new Promise((resolve, reject) => {
+    execFile(
+      CLAUDE_BIN,
+      ['-p', userInput],
+      { cwd: SCRATCH_DIR, timeout: 60_000, maxBuffer: 10 * 1024 * 1024 },
+      (err, stdout, stderr) => {
+        if (err) {
+          if (err.killed) return reject(new Error('The bot took too long to answer (timed out).'));
+          return reject(new Error(stderr.trim() || err.message));
+        }
+        resolve(stdout.trim());
+      }
+    );
+  });
+}
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+};
+
+function serveFile(res, fileName) {
+  const filePath = path.join(PUBLIC_DIR, fileName);
+  fs.readFile(filePath, (err, data) => {
+    if (err) { res.writeHead(404); res.end('Not found'); return; }
+    const ext = path.extname(filePath);
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+    res.end(data);
+  });
+}
+
+const server = http.createServer(async (req, res) => {
+  const u = new URL(req.url, `http://localhost:${PORT}`);
+
+  try {
+    if (u.pathname === '/api/login' && req.method === 'POST') {
+      const expectedUser = process.env.APP_USERNAME;
+      const expectedPass = process.env.APP_PASSWORD;
+      if (!expectedUser || !expectedPass) {
+        return sendJSON(res, 500, {
+          error: 'Server is missing APP_USERNAME / APP_PASSWORD. Add them to chatbot/.env (see chatbot/.env.example) and restart the server.',
+        });
+      }
+
+      const body = await readBody(req);
+      const username = (body.username || '').toString();
+      const password = (body.password || '').toString();
+      const ok = safeEqual(username, expectedUser) && safeEqual(password, expectedPass);
+
+      if (!ok) {
+        // Small fixed delay so repeated guesses can't be thrown as fast as possible.
+        await new Promise((r) => setTimeout(r, 400));
+        return sendJSON(res, 401, { error: 'Wrong username or password.' });
+      }
+
+      const token = createSession();
+      return sendJSON(res, 200, { ok: true }, {
+        'Set-Cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${Math.floor(SESSION_LIFETIME_MS / 1000)}`,
+      });
+    }
+
+    if (u.pathname === '/api/logout' && req.method === 'POST') {
+      const cookies = parseCookies(req);
+      if (cookies[SESSION_COOKIE]) sessions.delete(cookies[SESSION_COOKIE]);
+      return sendJSON(res, 200, { ok: true }, {
+        'Set-Cookie': `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`,
+      });
+    }
+
+    if (u.pathname === '/api/run' && req.method === 'POST') {
+      if (!isAuthed(req)) return sendJSON(res, 401, { error: 'Please sign in first.' });
+
+      const body = await readBody(req);
+      const input = (body.input || '').toString().trim();
+      if (!input) return sendJSON(res, 400, { error: 'Type something before clicking Run.' });
+
+      try {
+        const output = await callClaude(input);
+        return sendJSON(res, 200, { output });
+      } catch (e) {
+        return sendJSON(res, 502, { error: e.message });
+      }
+    }
+
+    if (u.pathname === '/' && req.method === 'GET') {
+      return serveFile(res, isAuthed(req) ? 'index.html' : 'login.html');
+    }
+
+    res.writeHead(404);
+    res.end('Not found');
+  } catch (e) {
+    sendJSON(res, 500, { error: e.message });
+  }
+});
+
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`Chatbot page is up: http://localhost:${PORT}`);
+  if (!process.env.APP_USERNAME || !process.env.APP_PASSWORD) {
+    console.log('Note: APP_USERNAME / APP_PASSWORD are not set yet — copy chatbot/.env.example to chatbot/.env and fill them in.');
+  }
+});
