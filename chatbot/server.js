@@ -23,17 +23,27 @@ const { execFile } = require('child_process');
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const ENV_FILE = path.join(ROOT, '.env');
-const PORT = 4546;
 const SESSION_COOKIE = 'session';
 const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-// The real claude.exe, not the claude.cmd wrapper — .cmd/.bat files need a shell
-// to run on Windows, and shells don't safely escape arguments containing spaces
-// or quotes. Calling the .exe directly lets Node pass userInput as one exact
-// argument, with no shell parsing involved at all.
-const CLAUDE_BIN = process.platform === 'win32'
-  ? path.join(process.env.APPDATA || '', 'npm', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe')
-  : 'claude';
+// A host (Koyeb, Render, etc.) sets PORT and expects us to bind every interface.
+// Locally there's no PORT env var, so we fall back to a fixed port on localhost
+// only, same as before.
+const IS_HOSTED = !!process.env.PORT;
+const PORT = process.env.PORT || 4546;
+const HOST = IS_HOSTED ? '0.0.0.0' : '127.0.0.1';
+
+// The real claude.exe/claude, not the claude.cmd wrapper — .cmd/.bat files need a
+// shell to run on Windows, and shells don't safely escape arguments containing
+// spaces or quotes. Calling the binary directly lets Node pass userInput as one
+// exact argument, with no shell parsing involved at all.
+// This is the copy npm installed as this project's own dependency (see
+// package.json), not a global install — so the exact same code path runs
+// whether it's your machine or a host that just ran `npm install`.
+const CLAUDE_BIN = path.join(
+  ROOT, 'node_modules', '@anthropic-ai', 'claude-code', 'bin',
+  process.platform === 'win32' ? 'claude.exe' : 'claude'
+);
 
 // Runs the prompt in a fresh scratch folder each time, so the CLI has no view of
 // this project's files.
@@ -204,7 +214,7 @@ const server = http.createServer(async (req, res) => {
 
       const token = createSession();
       return sendJSON(res, 200, { ok: true }, {
-        'Set-Cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${Math.floor(SESSION_LIFETIME_MS / 1000)}`,
+        'Set-Cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${Math.floor(SESSION_LIFETIME_MS / 1000)}${IS_HOSTED ? '; Secure' : ''}`,
       });
     }
 
@@ -212,7 +222,7 @@ const server = http.createServer(async (req, res) => {
       const cookies = parseCookies(req);
       if (cookies[SESSION_COOKIE]) sessions.delete(cookies[SESSION_COOKIE]);
       return sendJSON(res, 200, { ok: true }, {
-        'Set-Cookie': `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`,
+        'Set-Cookie': `${SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${IS_HOSTED ? '; Secure' : ''}`,
       });
     }
 
@@ -242,9 +252,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Chatbot page is up: http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(IS_HOSTED ? `Chatbot is listening on port ${PORT}` : `Chatbot page is up: http://localhost:${PORT}`);
   if (!process.env.APP_USERNAME || !process.env.APP_PASSWORD) {
-    console.log('Note: APP_USERNAME / APP_PASSWORD are not set yet — copy chatbot/.env.example to chatbot/.env and fill them in.');
+    console.log('Note: APP_USERNAME / APP_PASSWORD are not set yet — copy chatbot/.env.example to chatbot/.env and fill them in (or set them as host secrets).');
+  }
+  if (!process.env.ANTHROPIC_API_KEY && IS_HOSTED) {
+    console.log('Note: ANTHROPIC_API_KEY is not set — the claude CLI needs it to authenticate on a host with no interactive login.');
   }
 });

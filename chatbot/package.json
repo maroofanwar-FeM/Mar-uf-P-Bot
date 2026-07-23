@@ -1,0 +1,13 @@
+{
+  "name": "maruf-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Login-gated web UI for Mar'uf's bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "latest"
+  }
+}
