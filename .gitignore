@@ -3,3 +3,4 @@ server.log
 .claude/settings.local.json
 node_modules/
 chatbot/.env
+chatbot/tools/
