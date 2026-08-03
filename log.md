@@ -86,3 +86,4 @@ Plain-language log of every round of work. Newest entries at the bottom.
 - 2026-07-16 (daily wrap-up, re-run) — Fresh wrap-up on Maroof's request. Overwrote log/2026-07-16.md with complete version. No new activity since 2026-07-08; queue clean, both standing roles done. Status: done.
 
 - 2026-07-21 (daily wrap-up) — Quiet day, no new activity. Queue clean, both standing roles (Study Buddy, Professor Agent) done. Saved to log/2026-07-21.md.
+- 2026-07-29 (round check) — Nothing to do this round: both jobs (Study Buddy, Professor Agent) are done, all notes handled, no new notes from Maroof. Standing reminder not needed (no job in waiting/working/needs_ok). Noted but did not touch: uncommitted changes in chatbot/ and two stray scratchpad b64 files under chatbot/public/ from an earlier session — outside tasks.json scope, left for Maroof to review.

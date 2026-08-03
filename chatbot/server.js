@@ -81,6 +81,15 @@ loadEnvFile();
 // which is fine for a small personal tool. ---
 const sessions = new Map();
 
+// --- Login lockout: after too many wrong guesses in a row, lock out for a
+// cooldown. A single global counter (not per-IP) is enough for a one-user
+// tool sitting behind a public tunnel, where a would-be attacker only has
+// the tunnel URL to try against. ---
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+let loginFailures = 0;
+let lockedOutUntil = 0;
+
 function createSession() {
   const token = crypto.randomBytes(32).toString('hex');
   sessions.set(token, Date.now() + SESSION_LIFETIME_MS);
@@ -122,6 +131,20 @@ function safeEqual(a, b) {
     return false;
   }
   return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// SameSite=Lax already keeps the session cookie off cross-site POSTs, but an
+// explicit Origin check is cheap insurance against CSRF for state-changing
+// routes. No Origin header (e.g. same-tab form submit in older browsers) is
+// allowed through, since that case is already covered by SameSite=Lax.
+function isSameOriginRequest(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === req.headers.host;
+  } catch (e) {
+    return false;
+  }
 }
 
 function sendJSON(res, status, obj, extraHeaders) {
@@ -194,6 +217,11 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (u.pathname === '/api/login' && req.method === 'POST') {
+      if (Date.now() < lockedOutUntil) {
+        const waitSec = Math.ceil((lockedOutUntil - Date.now()) / 1000);
+        return sendJSON(res, 429, { error: `Too many failed attempts. Try again in ${waitSec}s.` });
+      }
+
       const expectedUser = process.env.APP_USERNAME;
       const expectedPass = process.env.APP_PASSWORD;
       if (!expectedUser || !expectedPass) {
@@ -208,11 +236,17 @@ const server = http.createServer(async (req, res) => {
       const ok = safeEqual(username, expectedUser) && safeEqual(password, expectedPass);
 
       if (!ok) {
+        loginFailures += 1;
+        if (loginFailures >= LOGIN_MAX_ATTEMPTS) {
+          lockedOutUntil = Date.now() + LOGIN_LOCKOUT_MS;
+          loginFailures = 0;
+        }
         // Small fixed delay so repeated guesses can't be thrown as fast as possible.
         await new Promise((r) => setTimeout(r, 400));
         return sendJSON(res, 401, { error: 'Wrong username or password.' });
       }
 
+      loginFailures = 0;
       const token = createSession();
       return sendJSON(res, 200, { ok: true }, {
         'Set-Cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${Math.floor(SESSION_LIFETIME_MS / 1000)}${IS_HOSTED ? '; Secure' : ''}`,
@@ -229,6 +263,7 @@ const server = http.createServer(async (req, res) => {
 
     if (u.pathname === '/api/run' && req.method === 'POST') {
       if (!isAuthed(req)) return sendJSON(res, 401, { error: 'Please sign in first.' });
+      if (!isSameOriginRequest(req)) return sendJSON(res, 403, { error: 'Cross-site request blocked.' });
 
       const body = await readBody(req);
       const input = (body.input || '').toString().trim();
