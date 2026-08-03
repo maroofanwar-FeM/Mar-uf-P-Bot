@@ -41,28 +41,10 @@ const HOST = IS_HOSTED ? '0.0.0.0' : '127.0.0.1';
 // This is the copy npm installed as this project's own dependency (see
 // package.json), not a global install — so the exact same code path runs
 // whether it's your machine or a host that just ran `npm install`.
-const CLAUDE_BIN = path.join(
-  ROOT, 'node_modules', '@anthropic-ai', 'claude-code', 'bin',
-  process.platform === 'win32' ? 'claude.exe' : 'claude'
-);
-
-// --- TEMPORARY diagnostic: on a host reporting ENOENT for CLAUDE_BIN, this
-// prints exactly what's actually in node_modules so we can see whether the
-// claude-code package's postinstall step produced the platform binary.
-// Safe to delete once the ENOENT is understood. ---
-try {
-  const scopeDir = path.join(ROOT, 'node_modules', '@anthropic-ai');
-  const claudeBinDir = path.join(scopeDir, 'claude-code', 'bin');
-  console.log('[diag] platform:', process.platform, process.arch);
-  console.log('[diag] @anthropic-ai/ contents:', fs.readdirSync(scopeDir));
-  console.log(
-    '[diag] claude-code/bin contents:',
-    fs.existsSync(claudeBinDir) ? fs.readdirSync(claudeBinDir) : '(bin dir missing)'
-  );
-  console.log('[diag] CLAUDE_BIN exists:', fs.existsSync(CLAUDE_BIN), '-', CLAUDE_BIN);
-} catch (e) {
-  console.log('[diag] error while inspecting node_modules:', e.message);
-}
+// The claude-code package's postinstall always places the real native binary
+// at bin/claude.exe on every OS — the .exe is a fixed filename convention
+// (needed for npm's cmd-shim on Windows), not a Windows-only extension.
+const CLAUDE_BIN = path.join(ROOT, 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe');
 
 // Runs the prompt in a fresh scratch folder each time, so the CLI has no view of
 // this project's files.
