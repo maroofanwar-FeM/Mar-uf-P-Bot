@@ -5,3 +5,4 @@ node_modules/
 chatbot/.env
 chatbot/tools/
 chatbot/tunnel-*.log
+chatbot/e2e-check-logs/
