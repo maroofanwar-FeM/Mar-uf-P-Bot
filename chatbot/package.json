@@ -7,7 +7,5 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies": {
-    "@anthropic-ai/claude-code": "latest"
-  }
+  "dependencies": {}
 }

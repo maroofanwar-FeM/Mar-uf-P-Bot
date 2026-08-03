@@ -1,4 +1,5 @@
-// A tiny standalone chatbot server. Plain Node.js, no npm installs, no external deps.
+// A tiny standalone chatbot server. Plain Node.js, no npm installs beyond the
+// Node built-ins, no framework.
 //
 // What it does:
 //   - Shows a login screen first. Only a username/password matching the
@@ -6,19 +7,13 @@
 //     never hard-coded) gets in.
 //   - Once signed in, serves the bot page (public/index.html): an input box, a
 //     Run button, an output area.
-//   - When you click Run, the page sends your text to this server, which runs
-//     the `claude` CLI as a one-off, non-interactive process to get a reply —
-//     no API key needed, since it uses whatever you're already logged into
-//     Claude Code with. It runs in a scratch folder outside this project, with
-//     no special permission flags, so it can only answer in text — it has no
-//     access to this project's files and can't run commands or edit anything
-//     on its own.
+//   - When you click Run, the page sends your text to this server, which calls
+//     Groq's free-tier chat completions API (OpenAI-compatible) to get a reply.
+//     Needs a GROQ_API_KEY — get one free at console.groq.com/keys.
 const http = require('http');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
-const { execFile } = require('child_process');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -34,22 +29,8 @@ const IS_HOSTED = !!process.env.PORT;
 const PORT = process.env.PORT || process.env.LOCAL_PORT || 4546;
 const HOST = IS_HOSTED ? '0.0.0.0' : '127.0.0.1';
 
-// The real claude.exe/claude, not the claude.cmd wrapper — .cmd/.bat files need a
-// shell to run on Windows, and shells don't safely escape arguments containing
-// spaces or quotes. Calling the binary directly lets Node pass userInput as one
-// exact argument, with no shell parsing involved at all.
-// This is the copy npm installed as this project's own dependency (see
-// package.json), not a global install — so the exact same code path runs
-// whether it's your machine or a host that just ran `npm install`.
-// The claude-code package's postinstall always places the real native binary
-// at bin/claude.exe on every OS — the .exe is a fixed filename convention
-// (needed for npm's cmd-shim on Windows), not a Windows-only extension.
-const CLAUDE_BIN = path.join(ROOT, 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe');
-
-// Runs the prompt in a fresh scratch folder each time, so the CLI has no view of
-// this project's files.
-const SCRATCH_DIR = path.join(os.tmpdir(), 'maruf-chatbot-scratch');
-fs.mkdirSync(SCRATCH_DIR, { recursive: true });
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 // --- Load .env (KEY=VALUE per line) without needing any npm package ---
 function loadEnvFile() {
@@ -175,28 +156,48 @@ function readBody(req) {
   });
 }
 
-// Runs `claude -p "<input>"` non-interactively and returns its text reply.
-// No --permission-mode flag is passed, so the CLI keeps its normal, cautious
-// defaults — it can't edit files or run commands without approval, and there's
-// no one here to click "yes", so it just answers in text.
-function callClaude(userInput) {
-  return new Promise((resolve, reject) => {
-    const child = execFile(
-      CLAUDE_BIN,
-      ['-p', userInput],
-      { cwd: SCRATCH_DIR, timeout: 60_000, maxBuffer: 10 * 1024 * 1024 },
-      (err, stdout, stderr) => {
-        if (err) {
-          if (err.killed) return reject(new Error('The bot took too long to answer (timed out).'));
-          return reject(new Error([stdout.trim(), stderr.trim()].filter(Boolean).join('\n') || err.message));
-        }
-        resolve(stdout.trim());
-      }
-    );
-    // Nothing is ever piped in — close stdin immediately so the CLI doesn't
-    // wait to see if input is coming.
-    child.stdin.end();
-  });
+// Calls Groq's OpenAI-compatible chat completions endpoint and returns the
+// reply text. Plain text only — this has no tool access, so it can't edit
+// files or run commands, unlike a full Claude Code session.
+async function callGroq(userInput) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error('Server is missing GROQ_API_KEY. Add it to chatbot/.env (see chatbot/.env.example) and restart the server.');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
+  let res;
+  try {
+    res = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: userInput }],
+      }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('The bot took too long to answer (timed out).');
+    throw new Error(`Could not reach Groq: ${e.message}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Groq API error ${res.status}: ${text.slice(0, 500)}`);
+  }
+
+  const data = await res.json();
+  const reply = data.choices?.[0]?.message?.content;
+  if (!reply) throw new Error('Groq API returned an empty reply.');
+  return reply.trim();
 }
 
 const MIME = {
@@ -273,7 +274,7 @@ const server = http.createServer(async (req, res) => {
       if (!input) return sendJSON(res, 400, { error: 'Type something before clicking Run.' });
 
       try {
-        const output = await callClaude(input);
+        const output = await callGroq(input);
         return sendJSON(res, 200, { output });
       } catch (e) {
         return sendJSON(res, 502, { error: e.message });
@@ -296,7 +297,7 @@ server.listen(PORT, HOST, () => {
   if (!process.env.APP_USERNAME || !process.env.APP_PASSWORD) {
     console.log('Note: APP_USERNAME / APP_PASSWORD are not set yet — copy chatbot/.env.example to chatbot/.env and fill them in (or set them as host secrets).');
   }
-  if (!process.env.ANTHROPIC_API_KEY && IS_HOSTED) {
-    console.log('Note: ANTHROPIC_API_KEY is not set — the claude CLI needs it to authenticate on a host with no interactive login.');
+  if (!process.env.GROQ_API_KEY) {
+    console.log('Note: GROQ_API_KEY is not set — get a free one at console.groq.com/keys and add it to chatbot/.env (or as a host env var).');
   }
 });
