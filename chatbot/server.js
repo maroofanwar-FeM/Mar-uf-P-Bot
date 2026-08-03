@@ -181,18 +181,21 @@ function readBody(req) {
 // no one here to click "yes", so it just answers in text.
 function callClaude(userInput) {
   return new Promise((resolve, reject) => {
-    execFile(
+    const child = execFile(
       CLAUDE_BIN,
       ['-p', userInput],
       { cwd: SCRATCH_DIR, timeout: 60_000, maxBuffer: 10 * 1024 * 1024 },
       (err, stdout, stderr) => {
         if (err) {
           if (err.killed) return reject(new Error('The bot took too long to answer (timed out).'));
-          return reject(new Error(stderr.trim() || err.message));
+          return reject(new Error([stdout.trim(), stderr.trim()].filter(Boolean).join('\n') || err.message));
         }
         resolve(stdout.trim());
       }
     );
+    // Nothing is ever piped in — close stdin immediately so the CLI doesn't
+    // wait to see if input is coming.
+    child.stdin.end();
   });
 }
 
