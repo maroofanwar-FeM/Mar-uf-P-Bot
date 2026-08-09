@@ -5,7 +5,10 @@
   "description": "Login-gated web UI for Mar'uf's bot",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:check": "node scripts/db-check.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
 }

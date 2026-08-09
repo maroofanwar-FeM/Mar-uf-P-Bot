@@ -1,5 +1,5 @@
-// A tiny standalone chatbot server. Plain Node.js, no npm installs beyond the
-// Node built-ins, no framework.
+// A tiny standalone chatbot server. Plain Node.js, no framework -- the one
+// real dependency is `pg`, for saving chat history to Postgres.
 //
 // What it does:
 //   - Shows a login screen first. Only a username/password matching the
@@ -10,10 +10,14 @@
 //   - When you click Run, the page sends your text to this server, which calls
 //     Groq's free-tier chat completions API (OpenAI-compatible) to get a reply.
 //     Needs a GROQ_API_KEY — get one free at console.groq.com/keys.
+//   - Each exchange (your message + the bot's reply) is saved to the database
+//     via db.js, grouped into one conversation per login session. A save
+//     failure is logged but never blocks the chat reply itself.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const db = require('./db');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -61,6 +65,56 @@ loadEnvFile();
 // --- Sessions: an in-memory token -> expiry map. Cleared on server restart,
 // which is fine for a small personal tool. ---
 const sessions = new Map();
+
+// --- Chat history: this app has no multi-user login or topic-picker UI, so
+// every conversation links to the same one default user and one default
+// topic row. Maps session token -> conversation_id (cleared on restart, same
+// as `sessions`), so all of one login session's messages group together. ---
+const conversationBySession = new Map();
+let defaultUserId = null;
+let defaultTopicId = null;
+
+async function getDefaultUserId() {
+  if (defaultUserId) return defaultUserId;
+  const name = process.env.APP_USERNAME || 'default user';
+  const existing = await db.query('SELECT id FROM users WHERE name = $1 LIMIT 1', [name]);
+  if (existing.rows[0]) return (defaultUserId = existing.rows[0].id);
+  const inserted = await db.query('INSERT INTO users (name) VALUES ($1) RETURNING id', [name]);
+  return (defaultUserId = inserted.rows[0].id);
+}
+
+async function getDefaultTopicId() {
+  if (defaultTopicId) return defaultTopicId;
+  const name = 'General';
+  const existing = await db.query('SELECT id FROM topics WHERE topic_name = $1 LIMIT 1', [name]);
+  if (existing.rows[0]) return (defaultTopicId = existing.rows[0].id);
+  const inserted = await db.query(
+    'INSERT INTO topics (topic_name, description) VALUES ($1, $2) RETURNING id',
+    [name, 'Default topic -- no topic-picker UI exists yet.']
+  );
+  return (defaultTopicId = inserted.rows[0].id);
+}
+
+async function getOrCreateConversation(sessionToken) {
+  const existing = conversationBySession.get(sessionToken);
+  if (existing) return existing;
+  const userId = await getDefaultUserId();
+  const topicId = await getDefaultTopicId();
+  const result = await db.query(
+    'INSERT INTO conversations (user_id, topic_id) VALUES ($1, $2) RETURNING id',
+    [userId, topicId]
+  );
+  const conversationId = result.rows[0].id;
+  conversationBySession.set(sessionToken, conversationId);
+  return conversationId;
+}
+
+function saveMessage(conversationId, sender, content) {
+  return db.query(
+    'INSERT INTO messages (conversation_id, sender, content) VALUES ($1, $2, $3)',
+    [conversationId, sender, content]
+  );
+}
 
 // --- Login lockout: after too many wrong guesses in a row, lock out for a
 // cooldown. A single global counter (not per-IP) is enough for a one-user
@@ -273,8 +327,23 @@ const server = http.createServer(async (req, res) => {
       const input = (body.input || '').toString().trim();
       if (!input) return sendJSON(res, 400, { error: 'Type something before clicking Run.' });
 
+      // A save failure here is logged but never blocks the actual reply --
+      // losing chat history is a lesser problem than losing the chat itself.
+      let conversationId = null;
+      try {
+        conversationId = await getOrCreateConversation(parseCookies(req)[SESSION_COOKIE]);
+        await saveMessage(conversationId, 'user', input);
+      } catch (e) {
+        console.error('Could not save the user message to the database:', e.message);
+      }
+
       try {
         const output = await callGroq(input);
+        if (conversationId) {
+          saveMessage(conversationId, 'bot', output).catch((e) =>
+            console.error('Could not save the bot reply to the database:', e.message)
+          );
+        }
         return sendJSON(res, 200, { output });
       } catch (e) {
         return sendJSON(res, 502, { error: e.message });
