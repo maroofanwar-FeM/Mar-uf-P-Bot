@@ -34,7 +34,7 @@ const PORT = process.env.PORT || process.env.LOCAL_PORT || 4546;
 const HOST = IS_HOSTED ? '0.0.0.0' : '127.0.0.1';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 // --- Load .env (KEY=VALUE per line) without needing any npm package ---
 function loadEnvFile() {
